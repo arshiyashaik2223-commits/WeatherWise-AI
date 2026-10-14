@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+plotly
+python-dotenv
+openpyxl
+xlrd
+reportlab
+anthropic
+openai
