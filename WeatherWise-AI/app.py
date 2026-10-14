@@ -1,13 +1,14 @@
 
-"""WeatherWise AI — interactive, dataset-first analysis dashboard."""
+"""WeatherWise AI — Interactive, Dataset-First Analysis Dashboard."""
 
 from pathlib import Path
 import json
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-from dotenv import load_dotenv
 import streamlit.components.v1 as components
+from dotenv import load_dotenv
 
 from src.data_loader import load_dataset
 from src.data_cleaning import clean_dataset
@@ -36,10 +37,6 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    :root {
-        --ww: #0f766e;
-    }
-
     .block-container {
         padding-top: 1.5rem;
         padding-bottom: 2rem;
@@ -48,10 +45,10 @@ st.markdown(
     [data-testid="stMetric"] {
         background: linear-gradient(
             135deg,
-            rgba(15,118,110,.10),
-            rgba(14,165,233,.06)
+            rgba(15, 118, 110, 0.10),
+            rgba(14, 165, 233, 0.06)
         );
-        border: 1px solid rgba(15,118,110,.18);
+        border: 1px solid rgba(15, 118, 110, 0.18);
         padding: 14px;
         border-radius: 14px;
     }
@@ -70,7 +67,7 @@ st.markdown(
     }
 
     .ww-hero p {
-        margin: .4rem 0 0;
+        margin: 0.4rem 0 0;
         color: #e6fffb;
     }
     </style>
@@ -138,7 +135,10 @@ with st.sidebar:
     )
 
     st.divider()
-    st.caption("📁 Upload CSV / Excel · 📊 Local analytics · 🤖 Optional hosted AI")
+
+    st.caption(
+        "📁 Upload CSV / Excel · 📊 Local analytics · 🤖 Optional hosted AI"
+    )
 
     uploaded = st.file_uploader(
         "Load a dataset",
@@ -163,13 +163,21 @@ with st.sidebar:
             st.session_state.original_df = pd.read_csv(SAMPLE)
             st.session_state.dataset_name = "sample_weather_data.csv"
             st.session_state.chat = []
+
+            st.session_state.pop("cleaned_preview", None)
+            st.session_state.pop("clean_audit", None)
+
             st.rerun()
+
         except Exception as exc:
             st.error(f"Could not load sample dataset: {exc}")
 
     st.caption(
         "Current source: "
-        + st.session_state.get("dataset_name", "bundled sample dataset")
+        + st.session_state.get(
+            "dataset_name",
+            "bundled sample dataset",
+        )
     )
 
 
@@ -201,6 +209,7 @@ date_cols = detect_date_columns(df)
 
 def overview_metrics():
     """Display basic dataset indicators."""
+
     a, b, c, d = st.columns(4)
 
     a.metric("Rows", f"{len(df):,}")
@@ -211,8 +220,13 @@ def overview_metrics():
 
 def chart_filters(frame):
     """Apply an optional date filter to a dataframe."""
+
     if date_cols:
-        chosen = st.selectbox("Date column", date_cols, key="datecol")
+        chosen = st.selectbox(
+            "Date column",
+            date_cols,
+            key="datecol",
+        )
 
         dates = pd.to_datetime(frame[chosen], errors="coerce")
 
@@ -229,7 +243,9 @@ def chart_filters(frame):
             )
 
             if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
-                mask = dates.dt.date.between(date_range[0], date_range[1])
+                start_date, end_date = date_range
+
+                mask = dates.dt.date.between(start_date, end_date)
                 frame = frame.loc[mask].copy()
 
     return frame
@@ -241,15 +257,17 @@ def chart_filters(frame):
 
 if page == "Overview":
     st.subheader("Your dataset at a glance")
+
     overview_metrics()
 
     left, right = st.columns([1.2, 1])
 
     with left:
         st.markdown("#### Dataset preview")
+
         st.dataframe(
             df.head(12),
-            use_container_width=True,
+            use_container_width="stretch",
             hide_index=True,
         )
 
@@ -281,20 +299,25 @@ if page == "Overview":
     missing_count = int(df.isna().sum().sum())
 
     if missing_count:
-        findings.append(f"**{missing_count} missing cells** need review.")
+        findings.append(
+            f"**{missing_count} missing cells** need review."
+        )
     else:
         findings.append("No missing cells were detected.")
 
     duplicate_count = int(df.duplicated().sum())
 
     if duplicate_count:
-        findings.append(f"**{duplicate_count} duplicate rows** were detected.")
+        findings.append(
+            f"**{duplicate_count} duplicate rows** were detected."
+        )
 
     if summary.get("date_coverage"):
         for date_info in summary["date_coverage"]:
             findings.append(
                 f"Date coverage in **{date_info['column']}**: "
-                f"{date_info['start'][:10]} to {date_info['end'][:10]} "
+                f"{date_info['start'][:10]} to "
+                f"{date_info['end'][:10]} "
                 f"({date_info['valid_dates']} valid dates)."
             )
 
@@ -311,7 +334,10 @@ if page == "Overview":
     for finding in findings:
         st.markdown("- " + finding)
 
-    st.caption("Findings are calculated from the current dataset. No forecast is generated.")
+    st.caption(
+        "Findings are calculated from the current dataset. "
+        "No forecast is generated."
+    )
 
 
 # --------------------------------------------------
@@ -327,7 +353,10 @@ elif page == "Explore & Visualize":
         f"Showing {len(frame):,} of {len(df):,} rows after current filters."
     )
 
-    st.dataframe(frame.head(100), use_container_width=True)
+    st.dataframe(
+        frame.head(100),
+        use_container_width=True,
+    )
 
     if numeric_cols:
         col = st.selectbox("Numeric variable", numeric_cols)
@@ -347,7 +376,11 @@ elif page == "Explore & Visualize":
 
         with c2:
             st.plotly_chart(
-                px.box(frame, y=col, title=f"Spread of {col}"),
+                px.box(
+                    frame,
+                    y=col,
+                    title=f"Spread of {col}",
+                ),
                 use_container_width=True,
             )
 
@@ -359,11 +392,20 @@ elif page == "Explore & Visualize":
             )
 
             trend = frame.copy()
+
             trend[datecol] = pd.to_datetime(
-                trend[datecol], errors="coerce"
+                trend[datecol],
+                errors="coerce",
             )
-            trend[col] = pd.to_numeric(trend[col], errors="coerce")
-            trend = trend.dropna(subset=[datecol, col]).sort_values(datecol)
+
+            trend[col] = pd.to_numeric(
+                trend[col],
+                errors="coerce",
+            )
+
+            trend = trend.dropna(
+                subset=[datecol, col]
+            ).sort_values(datecol)
 
             if not trend.empty:
                 st.plotly_chart(
@@ -377,7 +419,9 @@ elif page == "Explore & Visualize":
                     use_container_width=True,
                 )
             else:
-                st.info("No valid date/value pairs for a time-series chart.")
+                st.info(
+                    "No valid date/value pairs for a time-series chart."
+                )
 
         other = st.selectbox(
             "Compare with another numeric variable",
@@ -413,7 +457,9 @@ elif page == "Explore & Visualize":
             )
 
     else:
-        st.info("No numeric columns were detected. Numeric charts are unavailable.")
+        st.info(
+            "No numeric columns were detected. Numeric charts are unavailable."
+        )
 
     missing = (
         df.isna()
@@ -445,7 +491,10 @@ elif page == "Data Quality & Trust":
     st.metric(
         "Weather Data Trust Score",
         f"{trust['score']}/100",
-        help="Structural data quality indicator, not proof of meteorological accuracy.",
+        help=(
+            "Structural data quality indicator, "
+            "not proof of meteorological accuracy."
+        ),
     )
 
     a, b, c, d = st.columns(4)
@@ -456,6 +505,7 @@ elif page == "Data Quality & Trust":
     d.metric("Invalid date values", trust["invalid_date_values"])
 
     st.markdown("#### Transparent score formula")
+
     st.code(
         trust["formula"]
         + "\n= 60% completeness + 20% uniqueness + 20% date parseability"
@@ -464,8 +514,8 @@ elif page == "Data Quality & Trust":
     st.dataframe(
         pd.DataFrame(
             [
-                {"Check": k, "Score": v, "Weight": w}
-                for (k, v), w in zip(
+                {"Check": key, "Score": value, "Weight": weight}
+                for (key, value), weight in zip(
                     trust["components"].items(),
                     [0.6, 0.2, 0.2],
                 )
@@ -491,7 +541,9 @@ elif page == "Data Quality & Trust":
             else:
                 st.info(issue["message"])
     else:
-        st.success("No structural validation warnings from the configured checks.")
+        st.success(
+            "No structural validation warnings from the configured checks."
+        )
 
     st.markdown("#### Missingness map")
 
@@ -528,9 +580,15 @@ elif page == "Anomaly Detection":
     st.subheader("Explainable anomaly detection")
 
     if not numeric_cols:
-        st.info("No numeric columns are available for anomaly detection.")
+        st.info(
+            "No numeric columns are available for anomaly detection."
+        )
+
     else:
-        col = st.selectbox("Select a numeric column", numeric_cols)
+        col = st.selectbox(
+            "Select a numeric column",
+            numeric_cols,
+        )
 
         multiplier = st.slider(
             "IQR fence multiplier",
@@ -538,23 +596,35 @@ elif page == "Anomaly Detection":
             3.0,
             1.5,
             0.25,
-            help="Smaller values flag more observations. 1.5 is a common exploratory setting.",
+            help=(
+                "Smaller values flag more observations. "
+                "1.5 is a common exploratory setting."
+            ),
         )
 
-        anomalies = detect_anomalies(df, col, multiplier)
+        anomalies = detect_anomalies(
+            df,
+            col,
+            multiplier,
+        )
 
         st.caption(
-            "IQR flags values below Q1 − multiplier×IQR or above Q3 + "
-            "multiplier×IQR. Flags are review candidates, not confirmed errors."
+            "IQR flags values below Q1 − multiplier×IQR or above "
+            "Q3 + multiplier×IQR. Flags are review candidates, "
+            "not confirmed errors."
         )
 
         if anomalies.empty:
             st.info(
-                "No anomalies flagged, or there are too few valid observations "
-                "or no spread for this method."
+                "No anomalies flagged, or there are too few valid "
+                "observations or no spread for this method."
             )
+
         else:
-            st.metric("Flagged observations", len(anomalies))
+            st.metric(
+                "Flagged observations",
+                len(anomalies),
+            )
 
             st.dataframe(
                 anomalies,
@@ -565,12 +635,17 @@ elif page == "Anomaly Detection":
             chart = df.copy()
             chart["__row__"] = chart.index.astype(str)
             chart["__value__"] = pd.to_numeric(
-                chart[col], errors="coerce"
+                chart[col],
+                errors="coerce",
             )
+
+            flagged_indices = pd.to_numeric(
+                anomalies["row_index"],
+                errors="coerce",
+            ).dropna().astype(int)
+
             chart["__flag__"] = chart.index.isin(
-                pd.to_numeric(
-                    anomalies["row_index"], errors="coerce"
-                ).dropna().astype(int)
+                flagged_indices
             )
 
             st.plotly_chart(
@@ -605,8 +680,8 @@ elif page == "AI Assistant":
     st.subheader("🤖 WeatherWise AI Assistant")
 
     st.write(
-        "Ask questions about the uploaded dataset. Local answers use Pandas "
-        "calculations. Hosted AI is optional and explains computed context."
+        "Ask questions about the uploaded dataset. Local answers use "
+        "Pandas calculations. Hosted AI is optional."
     )
 
     examples = [
@@ -641,11 +716,18 @@ elif page == "AI Assistant":
 
     if st.button("Ask WeatherWise", type="primary") and question.strip():
         with st.spinner("Analyzing the current dataset…"):
+            # Always calculate a local answer first.
             local_answer = answer_local_question(df, question)
+
+            # Local Pandas analysis is the reliable fallback.
+            answer = (
+                "🌦️ Local AI Mode\n\n"
+                f"{local_answer}"
+            )
 
             if ai_mode:
                 try:
-                    answer = explain_with_ai(
+                    hosted_answer = explain_with_ai(
                         question,
                         {
                             "summary": summary,
@@ -654,22 +736,29 @@ elif page == "AI Assistant":
                             "local_answer": local_answer,
                         },
                     )
-                except Exception as exc:
-                    answer = (
-                        f"Hosted AI unavailable: {exc}\n\n"
-                        f"Local analysis: {local_answer}"
-                    )
-            else:
-                answer = local_answer
+
+                    # Do not replace the local answer with a fallback notice.
+                    if (
+                        hosted_answer
+                        and "Local AI Mode" not in hosted_answer
+                        and "API key not configured" not in hosted_answer
+                        and "API_KEY is not configured" not in hosted_answer
+                    ):
+                        answer = hosted_answer
+
+                except Exception:
+                    # If hosted AI fails, keep the useful local answer.
+                    pass
 
             st.session_state.chat.append((question, answer))
 
+    # Display recent conversation.
     for q, a in reversed(st.session_state.chat[-10:]):
         with st.chat_message("user"):
             st.write(q)
 
         with st.chat_message("assistant"):
-            st.write(a)
+            st.markdown(a)
 
     c1, c2 = st.columns(2)
 
@@ -684,6 +773,7 @@ elif page == "AI Assistant":
                 .replace("`", "")
                 .replace("\n", " ")
             )
+
             spoken_json = json.dumps(spoken, ensure_ascii=False)
 
             components.html(
@@ -756,9 +846,10 @@ elif page == "AI Assistant":
             st.info("Ask a question first.")
 
     st.caption(
-        "Hosted AI sends the question and computed summary context to your "
-        "configured provider. Do not upload sensitive data unless you are "
-        "comfortable with that provider's terms."
+        "Local mode calculates answers from your currently loaded dataset "
+        "using Pandas. When enabled and configured, hosted AI receives the "
+        "question and computed context. Avoid sending sensitive data to "
+        "external providers unless you accept their terms."
     )
 
 
@@ -779,7 +870,10 @@ elif page == "Cleaning & Export":
     strategy = st.selectbox(
         "Missing-value handling",
         ["keep", "drop rows", "median", "mean", "mode"],
-        help="Mean/median apply to numeric columns; mode is used for categorical columns.",
+        help=(
+            "Mean/median apply to numeric columns; "
+            "mode is used for categorical columns."
+        ),
     )
 
     selected = st.multiselect(
@@ -795,6 +889,7 @@ elif page == "Cleaning & Export":
             strategy,
             selected,
         )
+
         st.session_state.cleaned_preview = cleaned
         st.session_state.clean_audit = audit
 
@@ -807,11 +902,17 @@ elif page == "Cleaning & Export":
 
         with before:
             st.markdown("**Before**")
-            st.dataframe(df.head(10), use_container_width=True)
+            st.dataframe(
+                df.head(10),
+                use_container_width=True,
+            )
 
         with after:
             st.markdown("**After preview**")
-            st.dataframe(cleaned.head(10), use_container_width=True)
+            st.dataframe(
+                cleaned.head(10),
+                use_container_width=True,
+            )
 
         st.download_button(
             "Download cleaned CSV",
@@ -858,6 +959,7 @@ else:
             "weatherwise_report.pdf",
             "application/pdf",
         )
+
     except Exception as exc:
         st.warning(f"PDF report unavailable: {exc}")
 
@@ -872,8 +974,8 @@ else:
     st.markdown("#### Architecture")
 
     st.code(
-        "Upload CSV/Excel → Data loader → Pandas validation & summaries → "
-        "Streamlit dashboard\n"
+        "Upload CSV/Excel → Data loader → Pandas validation & summaries "
+        "→ Streamlit dashboard\n"
         "    ↘ IQR anomaly review\n"
         "    ↘ Optional hosted AI explanation (computed context only)\n"
         "    ↘ CSV / JSON / PDF exports"
@@ -912,6 +1014,6 @@ else:
         "**Does it predict weather?** No, it analyzes historical data only.\n\n"
         "**Does the chatbot calculate statistics?** Pandas computes statistics; "
         "optional AI explains calculated context.\n\n"
-        "**Can it work without an API key?** Yes, local analysis and the dashboard "
-        "work without one."
+        "**Can it work without an API key?** Yes, local analysis and the "
+        "dashboard work without one."
     )
